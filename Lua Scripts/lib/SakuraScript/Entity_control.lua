@@ -72,6 +72,14 @@ function entity_control_all(menu_parent, ent)
         local coords = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0.0, 0.0, 2.0)
         ENTITY.SET_ENTITY_COORDS(ent, coords.x, coords.y, coords.z, true, false, false, false)
     end)
+    menu.action(menu_parent, "传送到我的载具", {}, "", function()
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(players.user_ped(), false)
+        if vehicle then
+            if VEHICLE.ARE_ANY_VEHICLE_SEATS_FREE(vehicle) then
+                PED.SET_PED_INTO_VEHICLE(ped, vehicle, -2)
+            end
+        end
+    end)
     menu.action(menu_parent, "离我的距离", {}, "", function()
         local my_pos = ENTITY.GET_ENTITY_COORDS(players.user_ped())
         local ent_pos = ENTITY.GET_ENTITY_COORDS(ent)
@@ -79,10 +87,9 @@ function entity_control_all(menu_parent, ent)
             ent_pos.z))
         util.toast(distance)
     end)
-    menu.click_slider(menu_parent, "最大速度", {"control_ent_max_speed"}, "", 0.0, 1000.0, 30.0, 10.0,
-        function(value)
-            ENTITY.SET_ENTITY_MAX_SPEED(ent, value)
-        end)
+    menu.click_slider(menu_parent, "最大速度", {"control_ent_max_speed"}, "", 0.0, 1000.0, 30.0, 10.0,function(value)
+        ENTITY.SET_ENTITY_MAX_SPEED(ent, value)
+    end)
 
 end
 
@@ -93,23 +100,12 @@ function entity_control_ped(menu_parent, ped)
     local ped_type = PED.GET_PED_TYPE(ped)
     menu.readonly(menu_parent, "PED类型: ", ped_type)
 
-    menu.action(menu_parent, "传送到我的载具", {}, "", function()
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(players.user_ped(), false)
-        if vehicle then
-            if VEHICLE.ARE_ANY_VEHICLE_SEATS_FREE(vehicle) then
-                PED.SET_PED_INTO_VEHICLE(ped, vehicle, -2)
-            end
-        end
-    end)
-
     menu.action(menu_parent, "移除全部武器", {}, "", function()
         WEAPON.REMOVE_ALL_PED_WEAPONS(ped)
     end)
 
-    local weapon_list = {"微型冲锋枪", "特质卡宾步枪", "突击霰弹枪", "火神机枪", "火箭筒",
-                         "电磁步枪"}
-    local weapon_list_model = {"WEAPON_MICROSMG", "WEAPON_SPECIALCARBINE", "WEAPON_ASSAULTSHOTGUN", "WEAPON_MINIGUN",
-                               "WEAPON_RPG", "WEAPON_RAILGUN"}
+    local weapon_list = {"微型冲锋枪", "特质卡宾步枪", "突击霰弹枪", "火神机枪", "火箭筒", "电磁步枪"}
+    local weapon_list_model = {"WEAPON_MICROSMG", "WEAPON_SPECIALCARBINE", "WEAPON_ASSAULTSHOTGUN", "WEAPON_MINIGUN", "WEAPON_RPG", "WEAPON_RAILGUN"}
     menu.textslider(menu_parent, "给予武器", {}, "", weapon_list, function(value)
         local weaponHash = util.joaat(weapon_list_model[value])
         WEAPON.GIVE_WEAPON_TO_PED(ped, weaponHash, -1, false, true)
@@ -168,6 +164,18 @@ function entity_control_vehicle(menu_parent, vehicle)
 
     menu.action(menu_parent, "驾驶载具", {}, "", function()
         drive_vehicle(vehicle)
+    end)
+
+    menu.action(menu_parent, "切换引擎", {}, "", function(toggle)
+        local is_running = VEHICLE.GET_IS_VEHICLE_ENGINE_RUNNING(vehicle)
+        if request_control(vehicle, 3) then
+            VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, not is_running, true, true)
+        end
+    end)
+    menu.toggle_loop(menu_parent, "保持引擎启动", {}, "", function()
+        VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
+        VEHICLE.SET_VEHICLE_LIGHTS(vehicle, 0)
+        VEHICLE.SET_VEHICLE_HEADLIGHT_SHADOWS(vehicle, 2)
     end)
 
     menu.action(menu_parent, "踢出载具内NPC", {}, "", function()
